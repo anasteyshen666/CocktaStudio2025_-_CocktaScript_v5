@@ -1,0 +1,690 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Diagnostics.Eventing.Reader;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace CocktaStudio2025
+{
+    public partial class Form1: Form
+    {
+        Dictionary<string, string> variables = new Dictionary<string, string>();
+        List<string> code = new List<string>();
+        bool inputMode = true;
+        List<string> inputOutput;
+        int inputLine = 0; 
+
+
+
+        public Form1()
+        {
+            InitializeComponent();
+            richTextBox1.Clear();
+            richTextBox2.Clear();
+            string codeInput = richTextBox2.Text;
+            
+
+
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+           
+        }
+
+        private void richTextBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void richTextBox2_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            
+            inputLine = 0;
+            
+            variables.Clear();
+            code = richTextBox1.Text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+            inputOutput = richTextBox2.Text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+            for (int i = 0; i < code.Count; i++)
+            {
+                string line = code[i].Trim();
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
+                string[] parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0)
+                {
+                    continue;
+                }
+
+                string command = parts[0];
+
+                if(line == string.Empty)
+                {
+                    continue;
+                }
+
+                string[] completeLine = line.Split(' ');
+
+                //---General data types---
+
+                if (completeLine[0] == "int")
+                {
+                    string variableName = completeLine[1];
+                    if(completeLine.Length < 3 || completeLine[2] == string.Empty)
+                    {
+                        variables.Add(variableName, null);
+                        continue;
+                    }
+                    else
+                    {
+                        if(completeLine.Length >= 5 && (completeLine[3] == "+" || completeLine[3] == "-" ||
+                            completeLine[3] == "*" || completeLine[3] == "/" || completeLine[3] == "%"))
+                        {
+                            if (int.TryParse(completeLine[2], out int leftNumber) && int.TryParse(completeLine[4], out int rightNumber))
+                            {
+                                int result = 0;
+
+                                switch(completeLine[3])
+                                {
+                                    case "+":
+                                        result = leftNumber + rightNumber;
+                                        break;
+                                    case "-":
+                                        result = leftNumber - rightNumber;
+                                        break;
+                                    case "*":
+                                        result = leftNumber * rightNumber;
+                                        break;
+                                    case "/":
+                                        result = leftNumber / rightNumber;
+                                        break;
+                                    case "%":
+                                        result = leftNumber % rightNumber;
+                                        break;
+                                }
+
+                                variables.Add(variableName, result.ToString());
+
+                            }
+                            else
+                            {
+                                richTextBox2.AppendText("\n>One of the operands not a number");
+                            }
+                        }
+                        else
+                        {
+                            string variableValue = completeLine[2];
+
+                            if(int.TryParse(variableValue, out int value))
+                            {
+                                variables.Add(variableName, variableValue);
+                            }
+                            else
+                            {
+                                richTextBox2.AppendText("\n>Variable error: variable value is not int");
+                            }
+                        }
+                    }
+                }
+                else if (completeLine[0] == "float")
+                {
+                    string variableName = completeLine[1];
+
+                    if(completeLine.Length < 3 || completeLine[2] == string.Empty)
+                    {
+                        variables.Add(variableName, null);
+                        continue;
+                    }
+                    else
+                    {
+                        if(completeLine.Length >= 4 && (completeLine[3] == "+" || completeLine[3] == "-" ||
+                            completeLine[3] == "*" || completeLine[3] == "/" || completeLine[3] == "%"))
+                        {
+                            if (double.TryParse(completeLine[2], out double leftNumber) && double.TryParse(completeLine[4], out double rightNumber))
+                            {
+                                double result = 0;
+
+                                switch(completeLine[3])
+                                {
+                                    case "+":
+                                        result = leftNumber + rightNumber;
+                                        break;
+                                    case "-":
+                                        result = leftNumber - rightNumber;
+                                        break;
+                                    case "*":
+                                        result = leftNumber * rightNumber;
+                                        break;
+                                    case "/":
+                                        result = leftNumber / rightNumber;
+                                        break;
+                                    case "%":
+                                        result = leftNumber % rightNumber;
+                                        break;
+
+                                }
+
+                                variables.Add(variableName, result.ToString());
+                            }
+                            else
+                            {
+                                richTextBox2.AppendText("\n>One of the operands not a number");
+                            }
+                        }
+                        else
+                        {
+                            string variableValue = completeLine[2];
+
+                            if(double.TryParse(variableValue, out double value))
+                            {
+                                variables.Add(variableName, variableValue);
+                            }
+                            else
+                            {
+                                richTextBox2.AppendText("\n>Variable error: variable value is not float");
+                            }
+                        }
+                    }
+                }
+                else if (completeLine[0] == "bool")
+                {
+                    string variableName = completeLine[1];
+
+                    if(completeLine.Length < 3 || completeLine[2] == string.Empty)
+                    {
+                        variables.Add(variableName, null);
+                        continue;
+                    }
+                    else
+                    {
+                        string variableValue = completeLine[2];
+
+                        if(bool.TryParse(variableValue, out bool value))
+                        {
+                            variables.Add(variableName, variableValue);
+                        }
+                        else
+                        {
+                            richTextBox2.AppendText("\n>Variable error: variable value is not bool");
+                        }
+                            
+                    }
+                    
+                }
+                else if (completeLine[0] == "text")
+                {
+                    string variableName = completeLine[1];
+
+                    if(completeLine.Length < 3 || completeLine[2] == string.Empty)
+                    {
+                        variables.Add(variableName, null);
+                        continue;
+                    }
+                    else
+                    {
+                        string variableValue = completeLine[2];
+
+                        variables.Add(variableName, variableValue);
+                    }
+                }
+                else if (completeLine[0] == "char")
+                {
+                    string variableName = completeLine[1];
+
+                    if(completeLine.Length < 3 || completeLine[2] == string.Empty)
+                    {
+                        variables.Add(variableName, null);
+                        continue;
+                    }
+                    else
+                    {
+                        string variableValue = completeLine[2];
+
+                        if(char.TryParse(variableValue, out char value))
+                        {
+                            variables.Add(variableName, variableValue);
+                        }
+                        else
+                        {
+                            richTextBox2.AppendText("\n>Variable error: variable value is not char");
+                        }
+                    }
+                }
+
+                //---General commands---
+
+                else if (completeLine[0] == "print")
+                {
+                    richTextBox2.AppendText("\n");
+                    for (int j = 1; j < completeLine.Length; j++)
+                    {
+                        if (completeLine[j].StartsWith("."))
+                        {
+                            completeLine[j] = variables[completeLine[j].Substring(1)];
+
+                            richTextBox2.AppendText(completeLine[j] + " ");
+                        }
+                        else
+                        {
+                            richTextBox2.AppendText(completeLine[j] + " ");
+                        }
+                        //DINNER!!!
+                    }
+                    
+                }
+
+
+                else if (completeLine[0] == "input")
+                {
+                    if(completeLine.Length < 2)
+                    {
+                        richTextBox2.AppendText("\n> Input error: input without name of variable");
+                        continue;
+                    }
+
+                    string varName = completeLine[1];
+
+                    if(inputLine >= inputOutput.Count)
+                    {
+                        richTextBox2.AppendText($"> Input error: dont enough input data for variable {varName}");
+                        richTextBox2.AppendText($"\n {inputOutput.Count}");
+                        break;
+                    }
+
+                    string value = inputOutput[inputLine].Trim();
+                    inputLine++;
+
+                    if(variables.ContainsKey(varName))
+                    {
+                        variables[varName] = value;
+                    }
+                    else
+                    {
+                        variables.Add(varName, value);
+                    }
+                }
+                else if (completeLine[0] == "#")
+                {
+                    continue;
+                }
+                else if(completeLine.Length >= 3 &&
+                    ((int.TryParse(completeLine[0], out _) || completeLine[0].StartsWith(".")) &&
+                    (int.TryParse(completeLine[2], out _) || completeLine[2].StartsWith("."))))
+                {
+                    int element1 = 0;
+                    int element2 = 0;
+
+                    if (completeLine[0].StartsWith("."))
+                    {
+                        string varName = completeLine[0].Substring(1);
+
+                        if (variables.ContainsKey(varName))
+                            element1 = int.Parse(variables[varName]);
+                        else
+                        {
+                            richTextBox2.AppendText($">Variable {varName} doesnt exist");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        element1 = int.Parse(completeLine[0]);
+                    }
+
+                    if (completeLine[2].StartsWith("."))
+                    {
+                        string varName2 = completeLine[2].Substring(1);
+                        if (variables.ContainsKey(varName2))
+                            element2 = int.Parse(variables[varName2]);
+                        else
+                        {
+                            richTextBox2.AppendText($">Variable {varName2} doesnt exist");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        element2 = int.Parse(completeLine[2]);
+                    }
+
+                    string operation = completeLine[1];
+                    int result;
+
+                    switch(operation)
+                    {
+                        case "+":
+                            result = element1 + element2;
+                            break;
+                        case "-":
+                            result = element1 - element2;
+                            break;
+                        case "*":
+                            result = element1 * element2;
+                            break;
+                        case "/":
+                            if(element2 == 0)
+                            {
+                                richTextBox2.AppendText(">Error: devide by 0");
+                                return;
+                            }
+                            result = element1 / element2;
+                            break;
+                        case "%":
+                            result = element1 % element2;
+                            break;
+                        default:
+                            richTextBox2.AppendText(">Unknown operation");
+                            return;
+                    }
+
+                    richTextBox2.AppendText($"{result}");
+
+                }
+                else if (completeLine[0].StartsWith("."))
+                {
+                    string newValue = completeLine[1];
+                    string varName = completeLine[0].Substring(1);
+
+                    if(variables.ContainsKey(varName))
+                    {
+                        variables[varName] = newValue;
+                    }
+                    else
+                    {
+                        richTextBox2.AppendText($"Error: variable {varName} doesnt exist");
+                    }
+                }
+                else if (completeLine[0] == "if" && completeLine.Length >= 4)
+                {
+                    string leftOperand = completeLine[1];
+                    string comparison = completeLine[2];
+                    string rightOperand = completeLine[3];
+
+                    string leftRaw;
+                    string rightRaw;
+
+                    if(leftOperand.StartsWith("."))
+                    {
+                        string leftVariable = leftOperand.Substring(1);
+                        if(!variables.ContainsKey(leftVariable))
+                        {
+                            richTextBox2.AppendText($">Variable {leftVariable} does not exist");
+                            return;
+                        }
+                        leftRaw = variables[leftVariable];
+                    }
+                    else
+                    {
+                        leftRaw = leftOperand;
+                    }
+
+                    if(rightOperand.StartsWith("."))
+                    {
+                        string rightVariable = rightOperand.Substring(1);
+
+                        if(!variables.ContainsKey(rightVariable))
+                        {
+                            richTextBox2.AppendText($">Variable {rightVariable} does not exist");
+                        }
+                        rightRaw = variables[rightVariable];
+                    }
+                    else
+                    {
+                        rightRaw = rightOperand;
+                    }
+
+                    bool condition = false;
+
+                    bool isLeftNumber = float.TryParse(leftRaw, out float leftValue);
+                    bool isRightNumber = float.TryParse(rightRaw, out float rightValue);
+
+                    if (isLeftNumber && isRightNumber)
+                    {
+                        if (comparison == "=")
+                        {
+                            condition = leftValue == rightValue;
+                        }
+                        else if (comparison == "!=")
+                        {
+                            condition = leftValue != rightValue;
+                        }
+                        else if (comparison == ">")
+                        {
+                            condition = leftValue > rightValue;
+                        }
+                        else if (comparison == "<")
+                        {
+                            condition = leftValue < rightValue;
+                        }
+                        else if (comparison == ">=")
+                        {
+                            condition = leftValue >= rightValue;
+                        }
+                        else if (comparison == "<=")
+                        {
+                            condition = leftValue <= rightValue;
+                        }
+                    }
+                    else
+                    {
+                        if (comparison == "=")
+                        {
+                            condition = leftRaw == rightRaw;
+                        }
+                        else if (comparison == "!=")
+                        {
+                            condition = leftRaw != rightRaw;
+                        }
+                        else if (comparison == ">")
+                        {
+                            condition = string.Compare(leftRaw, rightRaw) > 0;
+                        }
+                        else if (comparison == "<")
+                        {
+                            condition = string.Compare(leftRaw, rightRaw) < 0;
+                        }
+                        else if (comparison == ">=")
+                        {
+                            condition = string.Compare(leftRaw, rightRaw) >= 0;
+                        }
+                        else if (comparison == "<=")
+                        {
+                            condition = string.Compare(leftRaw, rightRaw) <= 0;
+                        }
+                    }
+
+                    if(!condition)
+                    {
+                        while (i < code.Count && code[i].Trim().ToLower() != "end")
+                        {
+                            i++;
+                        }
+                    }
+                    else
+                    {
+
+                    }
+                }
+                else if (completeLine[0] == "while" && completeLine.Length >= 4)
+                {
+                    int loopStart = i;
+
+                    string leftOperand = completeLine[1];
+
+                    string comparison = completeLine[2];
+
+                    string rightOperand = completeLine[3];
+
+                    string GetRawValue(string operand)
+                    {
+                        if (operand.StartsWith("."))
+                        {
+                            string varName = operand.Substring(1);
+
+                            if (!variables.ContainsKey(varName))
+                            {
+                                richTextBox2.AppendText($"\n>Variable {varName} does not exist");
+                                return null;
+                            }
+
+                            return variables[varName];
+                        }
+
+                        return operand;
+                    }
+
+                    while (true)
+                    {
+                        string leftRaw = GetRawValue(leftOperand);
+
+                        string rightRaw = GetRawValue(rightOperand);
+
+                        if (leftRaw == null || rightRaw == null)
+                        {
+                            break;
+                        }
+                            
+
+                        bool isLeftNumber = float.TryParse(leftRaw, out float leftValue);
+
+                        bool isRightNumber = float.TryParse(rightRaw, out float rightValue);
+
+                        bool condition = false;
+
+                        if (isLeftNumber && isRightNumber)
+                        {
+                            switch (comparison)
+                            {
+                                case "=": 
+                                    condition = leftValue == rightValue; 
+                                    break;
+                                case "!=": 
+                                    condition = leftValue != rightValue; 
+                                    break;
+                                case ">": 
+                                    condition = leftValue > rightValue; 
+                                    break;
+                                case "<": 
+                                    condition = leftValue < rightValue; 
+                                    break;
+                                case ">=": 
+                                    condition = leftValue >= rightValue; 
+                                    break;
+                                case "<=": 
+                                    condition = leftValue <= rightValue; 
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            switch (comparison)
+                            {
+                                case "=": 
+                                    condition = leftRaw == rightRaw; 
+                                    break;
+                                case "!=": 
+                                    condition = leftRaw != rightRaw; 
+                                    break;
+                                case ">": 
+                                    condition = string.Compare(leftRaw, rightRaw) > 0; 
+                                    break;
+                                case "<": 
+                                    condition = string.Compare(leftRaw, rightRaw) < 0; 
+                                    break;
+                                case ">=": 
+                                    condition = string.Compare(leftRaw, rightRaw) >= 0; 
+                                    break;
+                                case "<=": 
+                                    condition = string.Compare(leftRaw, rightRaw) <= 0; 
+                                    break;
+                            }
+                        }
+
+                        if (!condition)
+                        {
+                            
+                            while (i < code.Count && code[i].Trim().ToLower() != "end")
+                                i++;
+                            break;
+                        }
+
+                        
+                        int innerIndex = loopStart + 1;
+
+                        while (innerIndex < code.Count && code[innerIndex].Trim().ToLower() != "end")
+                        {
+                            
+                            string temp = code[innerIndex];
+
+                            code.Insert(i + 1, temp); 
+
+                            innerIndex++;
+                        }
+                    }
+
+                    
+                    while (i < code.Count && code[i].Trim().ToLower() != "end")
+                        i++;
+                }
+
+            }
+
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            richTextBox1.Clear();
+            richTextBox2.Clear();
+            variables.Clear();
+            code.Clear();
+            inputMode = true;
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                File.WriteAllLines($"{textBox1.Text}.txt", code);
+                richTextBox2.AppendText("\n>File success save");
+            }
+            catch (Exception ex)
+            {
+                richTextBox2.AppendText("Error save: " + ex.Message);
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                 
+                code = new List<string>(File.ReadAllLines($"{textBox2.Text}.txt"));
+                richTextBox1.Clear();
+
+                for (int i = 0; i < code.Count; i++)
+                {
+                    richTextBox1.AppendText($"{code[i]}\n");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Load error: " + ex.Message);
+            }
+        }
+    }
+}
